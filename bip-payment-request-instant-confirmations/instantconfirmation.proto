@@ -1,0 +1,18 @@
+import "paymentrequest.proto";
+
+package instantconfirmation;
+option java_package = "org.bitcoin.protocols.payments";
+option java_outer_classname = "InstantConfirmationProtos";
+
+extend payments.PaymentDetails {
+        optional bool supports_instant = 1000;             // If the Payment message can include instant confirmation
+        repeated string trusted_instant_providers = 1001;  // List of trusted instant confirmation provider DNS names
+}
+extend payments.Payment {
+        optional string instant_pki_type = 1000;  // x509+sha256 / x509+sha1
+        optional bytes instant_pki_data = 1001;  // serialized X509Certificates
+        optional bytes instant_signature = 1002;  // signature for instant confirmation
+}
+message Transactions {
+        repeated bytes transactions = 1;  // Transactions copied over from the Payment message for signing
+}

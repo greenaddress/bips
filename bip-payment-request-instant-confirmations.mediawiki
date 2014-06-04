@@ -1,0 +1,97 @@
+<pre>
+  BIP: ??
+  Title: Payment Request instant confirmations
+  Author: Lawrence Nahum <lawrence@greenaddress.it>
+  Status: Draft
+  Type: Informational
+  Created: 2014-06-04
+</pre>
+
+==Abstract==
+
+This BIP describes an enhancement to the payment protocol
+([[bip-0070.mediawiki|BIP 70]]) that allows trusted third parties to provide
+instant transaction confirmation functionality to other third parties that are
+willing to trust the instantness provided by the instant confirmation provider.
+
+It is meant to solve the problem of Bitcoin transactions requiring block
+confirmations to prevent senders from doing a double spend, which is an
+obstacle for doing transactions requiring quick confirmation, such as coffee
+purchases.
+
+This proposal is not tied to any specific implementation of instant
+confirmations. Any third party such as a wallet provider can allow its users
+to send instant Bitcoin transactions, given that payment recipients are willing
+to trust the guarantees provided.
+
+Such third party instant confirmation guarantees can be supported by any
+appropriate technical implementation, like storing sets of already spent
+multisignature outputs, or analysing transaction network propagation.
+
+The first implementation of this BIP is done by GreenAddress wallet and is
+based on server-side-signed multisignature transactions with the server
+verifying that output were not spent before.
+
+
+==Motivation==
+
+The payment protocol allows transactions to be negotiated between Bitcoin
+services such as wallets and merchants. It is a hence convenient place to add
+support for requesting instant transactions from transaction senders and
+providing instant guarantees to transaction receivers.
+
+
+==Specification==
+
+The following fields are added to the payment protocol messages as an optional
+extension, as per [[bip-payment-request-instant-confirmations/instantconfirmation.proto|instantconfirmation.proto]]:
+
+In the PaymentDetails message:
+ * supports_instant,
+ * trusted_instant_providers.
+
+In the Payment message:
+ * instant_pki_type,
+ * instant_pki_data,
+ * instant_signature.
+
+A new Transactions message is also added with a "transactions" field.
+
+===supports_instant field===
+This field should be set to true, if the sender of the payment request accepts
+instant confirmations as per this BIP.
+
+===trusted_instant_providers field===
+If supports_instant is true, this field should contain a list of certificate
+CNs which are trusted by the payment request.
+
+===instant_pki_type field===
+public-key infrastructure (PKI) system being used to identify the instant
+confirmation provider. All implementation should support "x509+sha256" and
+"x509+sha1".
+
+===instant_pki_data field===
+PKI-system data that identifies the instant confirmation provider and is used
+to create a digital signature. In the case of X.509 certificates,
+instant_pki_data ontains one or more X.509 certificates (see Certificates
+section of ([[bip-0070.mediawiki|BIP 70]]) for details).
+
+===instant_signature===
+instant_signature should be calculated from hash of the serialized Transactions
+message with transactions field copied over from the Payment message.
+
+
+==Rationale==
+The X.509 standard was chosen for consistency with BIP 70 and because of its
+feature completeness, which includes certificate chains and key revocation.
+
+Alternative specification was considered with plain ECDSA signatures and
+lists of public keys stored by services willing to accept instant confirmations,
+but it was deemed insufficient (https://github.com/bitcoin/bips/pull/65#issuecomment-43761124).
+
+
+==Compatibility==
+
+Because protobuf extensions are optional, any BIP 70 implementation can safely
+ignore the fields specified here and do transactions without instant
+confirmations.
