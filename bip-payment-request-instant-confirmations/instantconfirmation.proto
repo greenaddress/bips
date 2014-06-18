@@ -5,8 +5,7 @@ option java_package = "org.bitcoin.protocols.payments";
 option java_outer_classname = "InstantConfirmationProtos";
 
 extend payments.PaymentDetails {
-        optional bool supports_instant = 1000;             // If the Payment message can include instant confirmation
-        repeated string trusted_instant_providers = 1001;  // List of trusted instant confirmation provider DNS names
+        repeated string trusted_instant_providers = 1000;  // List of trusted instant confirmation provider CNs
 }
 extend payments.Payment {
         optional string instant_pki_type = 1000;  // x509+sha256 / x509+sha1

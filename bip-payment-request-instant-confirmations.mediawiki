@@ -26,11 +26,11 @@ to trust the guarantees provided.
 
 Such third party instant confirmation guarantees can be supported by any
 appropriate technical implementation, like storing sets of already spent
-multisignature outputs, or analysing transaction network propagation.
+multisignature outputs.
 
 The first implementation of this BIP is done by GreenAddress wallet and is
 based on server-side-signed multisignature transactions with the server
-verifying that output were not spent before.
+verifying that outputs were not spent before.
 
 
 ==Motivation==
@@ -47,7 +47,6 @@ The following fields are added to the payment protocol messages as an optional
 extension, as per [[bip-payment-request-instant-confirmations/instantconfirmation.proto|instantconfirmation.proto]]:
 
 In the PaymentDetails message:
- * supports_instant,
  * trusted_instant_providers.
 
 In the Payment message:
@@ -57,13 +56,9 @@ In the Payment message:
 
 A new Transactions message is also added with a "transactions" field.
 
-===supports_instant field===
-This field should be set to true, if the sender of the payment request accepts
-instant confirmations as per this BIP.
-
 ===trusted_instant_providers field===
-If supports_instant is true, this field should contain a list of certificate
-CNs which are trusted by the payment request.
+This optional field should contain a list of certificate CNs which are trusted
+by the payment request, if any.
 
 ===instant_pki_type field===
 public-key infrastructure (PKI) system being used to identify the instant
@@ -95,3 +90,12 @@ but it was deemed insufficient (https://github.com/bitcoin/bips/pull/65#issuecom
 Because protobuf extensions are optional, any BIP 70 implementation can safely
 ignore the fields specified here and do transactions without instant
 confirmations.
+
+
+==Example==
+# Merchant sends a PaymentRequest message with <code>trusted_instant_providers</code> in PaymentDetails set to a two element list ["greenaddress.it", "coinbase.com"].
+# The wallet application (greenaddress or coinbase) notices that <code>trusted_instant_providers</code> is set to a list containing its CN, so it serializes a <code>Transactions</code> message with  transactions copied over from the <code>Payment</code> message. The serialized <code>Transactions</code> message is signed using the wallet's private key.
+# A Payment message is sent containing:
+#* <code>instant_pki_type</code> and <code>instant_pki_data</code> with a certificate having its CN equal to greenaddress.it or coinbase.com, and
+#* <code>instant_signature</code> with a signature from private key matching the certificate.
+# Merchant verifies the above signature and basing on it trusts that the instant confirmation provider will not allow double spending the funds.
