@@ -1,0 +1,104 @@
+<pre>
+  BIP: undostucktx (temp)
+  Layer: Applications
+  Title: Allow unconditional mempool transaction replacement after a timeout
+  Author: Lawrence Nahum <lawrence@greenaddress.it>
+  Comments-Summary: No comments yet.
+  Status: Draft
+  Type: Informational
+  Created: 2017-07-15
+  License: BSD-2-Clause
+</pre>
+
+==Introduction==
+
+Bitcoin transaction with low fees can get stuck for weeks as of 0.14 before transactions are evicted from the mempool.
+
+Transaction can also be repropagated after being evicted, either intentionally or unintentionally (perhaps by a third party).
+
+Before the 0.14.0 release transactions used to get stuck for 72 hours.
+
+Bitcoin 0.12 introduced (or in a way re-introduced) opt-in transaction replacement (BIP125), allowing people to more explicitly flag that their transaction can be replaced (such that users of zero conf transactions can immediately recognize them).
+
+There are a number of work arounds like opt-in replacement, Child Pays For Parent but those don't cover some cases
+like transactions originally sent with software that doesn't support opt-in replacement and without change or transaction that need to
+be reversed.
+
+Other workarounds like unconditional replacement (or full rbf) also work but currently require specific configuration and otherwise some expertise and are less likely to be implemented by wallet developers as it stands.
+
+However enabling unconditional replacement can affect users of zero confirmation transactions.
+
+A compromise solution that doesn't impact zero confirmation use and that improves the user experience by allowing to replace stuck transaction in a timely fashion is presented.
+
+===Abstract===
+
+This document proposes a policy change regarding transactions in mempool.
+The proposal allows for unconditional mempool transaction replacement after a configurable timeout.
+
+===Copyright===
+
+This BIP is licensed under the 2-clause BSD license.
+
+===Motivation===
+
+Bitcoin mining transaction fees play a central role in prompt confirmation and user experience.
+Stuck transactions are an issue however it is important to allow users to attempt lower fee before re-attempting transactions with improved fees or during a lower volume period.
+
+The changes introduced in 0.14 to extend the eviction timeout from 72 hours to 2 weeks (among other things) have improved the probability of having a transaction mined during low volume periods without forcing users to rebroadcast transactions however it has also made it more complex for stuck transactions that do not get mined for days.
+
+This change attempts to re-introduce some balance.
+
+
+===Examples===
+
+# To test the replacement use replace-by-fee-tools:
+# Run daemon with 10 seconds
+./bitcoind -regtest -mempoolreplacementtimeout=10
+
+# Use doublespend.py and set -t for regtest
+./doublespend.py -t miP6bc5jUBADFH1WVudZUtGPTGHucucpPo 1
+
+# if you increase the timeout to more than 15 seconds (doublespend.py default) the replacement will fail to be accepted.
+
+# Run daemon with previous behavior
+./bitcoind -mempoolreplacementtimeout=1209600
+
+==Specification==
+
+Transactions in mempool become as if they had the opt-in replacement nSequence flag from BIP125 after the specified timeout.
+
+This means that the rules for replacement are the same and involve adequate fee increases.
+
+The timeout by default is of 6 hours.
+
+Setting the mempool replacement timeout to two weeks should match previous behavior.
+
+The changes continue to support disabling entirely transaction replacement
+(-mempoolreplacement) and introduces a new command line parameter
+(-mempoolreplacementtimeout) which allows to pass the number of seconds after
+which a transaction can be unconditionally replaced.
+
+===Compatibility===
+
+Both old and new software will be able to be compatible with these changes.
+
+==Rationale==
+
+A mempool replacement timeout allows for continued use without affecting zero confirmation usage while improving the user experience with stuck transactions.
+
+The timeout should be high enough that allows current use of zero conf and at
+the same time allows same working day solution for users.
+This proposal suggests 6 hours timeout and to have it configurable for testing and ability
+for user to change.
+
+==Reference implementations==
+
+https://github.com/bitcoin/bitcoin/pull/10823
+
+==Acknowledgements==
+
+This changes have been inspired by conversations held with Peter Todd and Greg Maxwell and others in the community.
+A lot of these changes would have been more difficult without previous proposal by Peter Todd and his replace-by-fee-tools.
+
+I thank all involved in the reviewing and testing of this proposal.
+
